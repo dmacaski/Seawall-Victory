@@ -57,15 +57,19 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.2);
     }
     .healthFill { height: 100%; width: 100%; background: linear-gradient(90deg, #16a34a, #f59e0b, #ef4444); transition: width .25s ease; }
+    /* particles */
     .particle {
       position: absolute; width: 8px; height: 8px; border-radius: 50%;
       background: #fb923c; box-shadow: 0 0 6px rgba(251, 146, 60, .8);
-      opacity: 0; pointer-events: none;
+      opacity: 0;
+      pointer-events: none;
     }
+    /* confetti */
     .confetti {
       position: absolute; width: 10px; height: 16px; opacity: 0.95;
       transform: rotate(0deg); will-change: transform, top, left;
     }
+    /* screen shake */
     .shake { animation: shake .35s ease; }
     @keyframes shake {
       0%{ transform: translate(0,0); }
@@ -75,6 +79,7 @@
       80%{ transform: translate(3px, -2px); }
       100%{ transform: translate(0,0); }
     }
+    /* Victory overlay */
     .victory {
       position: absolute; inset: 0; display:none; align-items:center; justify-content:center; flex-direction: column;
       background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
@@ -115,6 +120,7 @@
       <div class="health"><div class="healthFill" id="healthFill"></div></div>
       <div class="enemy" id="enemy">
         <div class="name">Ball Pond Scum</div>
+        <!-- explosions container -->
         <svg class="boom" id="boom1" width="90" height="90" viewBox="0 0 100 100" fill="none">
           <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
                    fill="#fb923c" stroke="#7c2d12" stroke-width="3"></polygon>
@@ -141,10 +147,10 @@
     <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
   </div>
 
-  <!-- Background music: Victory at Sea. Using <audio> helps autoplay policies & reliability. -->
+  <!-- Background music: Victory at Sea -->
   <audio id="bgm" preload="auto" loop crossorigin="anonymous">
     <source src="https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg" type="audio/ogg">
-    <!-- Optional fallback if you add an mp3 to your repo:
+    <!-- Optional local fallback (add an MP3 to your repo root and uncomment below)
     <source src="./victory_at_sea.mp3" type="audio/mpeg">
     -->
   </audio>
@@ -160,4 +166,241 @@
     ready(function(){
       const scene = document.getElementById('scene');
       const fireBtn = document.getElementById('fireBtn');
-      const volleyBtn = document
+      const volleyBtn = document.getElementById('volleyBtn');
+      const musicBtn = document.getElementById('musicBtn');
+      const enemy = document.getElementById('enemy');
+      const healthFill = document.getElementById('healthFill');
+      const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
+      const victory = document.getElementById('victory');
+      const restartBtn = document.getElementById('restartBtn');
+      const bgm = document.getElementById('bgm');
+
+      if (!scene || !fireBtn || !volleyBtn || !musicBtn || !enemy || !healthFill || !victory || !restartBtn || !bgm) {
+        console.error('Missing required elements. Check IDs in HTML.');
+        return;
+      }
+
+      // --- SFX ---
+      const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
+      const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
+      const voice = new SpeechSynthesisUtterance('Captain Seawall unleashes a devastating barrage on Ball Pond Scum!');
+      voice.rate = 0.95; voice.pitch = 0.55;
+      function speak(text){ try { if (text) voice.text = text; speechSynthesis.cancel(); speechSynthesis.speak(voice); } catch(e){} }
+      function playSfx(a){ try { a.currentTime = 0; a.play(); } catch(e){} }
+
+      // --- Music: robust autoplay handling ---
+      let musicOn = false;     // true only when actually playing
+      let unlockArmed = false;
+      bgm.volume = 0.45;
+
+      async function tryPlay(){
+        try {
+          await bgm.play();
+          musicBtn.textContent = '🎵 Music: On';
+          musicOn = true;                 // set only after success
+          return true;
+        } catch (e) {
+          // Autoplay blocked — arm a one-time user-gesture unlock
+          if (!unlockArmed) {
+            unlockArmed = true;
+            const unlock = async () => {
+              try { await bgm.play(); musicBtn.textContent = '🎵 Music: On'; musicOn = true; }
+              finally {
+                window.removeEventListener('pointerdown', unlock, true);
+                window.removeEventListener('keydown',  unlock, true);
+                window.removeEventListener('touchstart', unlock, true);
+              }
+            };
+            window.addEventListener('pointerdown', unlock, true);
+            window.addEventListener('keydown',  unlock, true);
+            window.addEventListener('touchstart', unlock, true);
+            musicBtn.textContent = '🎵 Click to Play Music';
+          }
+          musicOn = false;
+          return false;
+        }
+      }
+
+      async function startMusic(){
+        if (!bgm.paused) { musicOn = true; musicBtn.textContent = '🎵 Music: On'; return; }
+        await tryPlay();
+      }
+
+      function stopMusic(){
+        try { bgm.pause(); } catch(e){}
+        musicOn = false;
+        musicBtn.textContent = '🎵 Music: Off';
+      }
+
+      // Try to start immediately; if blocked, first user gesture starts it
+      startMusic();
+
+      // Toggle button always checks the real player state
+      musicBtn.addEventListener('click', async () => {
+        if (bgm.paused) await startMusic();
+        else stopMusic();
+      });
+
+      // Resume after tab returns if user wanted music
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && musicOn && bgm.paused) tryPlay();
+      });
+
+      // --- Gameplay state ---
+      let firing = false;
+      let health = 100;
+
+      function makeParticle(x, y) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        document.body.appendChild(p);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 140;
+        const life = 500 + Math.random() * 400;
+        const start = performance.now();
+        p.style.opacity = 1;
+        function frame(t){
+          const k = Math.min(1, (t - start)/life);
+          const dx = Math.cos(angle) * speed * k;
+          const dy = Math.sin(angle) * speed * k + 0.5 * 400 * (k*k);
+          p.style.transform = `translate(${dx}px, ${dy}px) scale(${1-k})`;
+          p.style.opacity = 1-k;
+          if (k < 1) requestAnimationFrame(frame); else p.remove();
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function confettiBurst() {
+        const colors = ['#fde047','#60a5fa','#fb7185','#34d399','#fbbf24','#c084fc'];
+        for (let i=0;i<120;i++) {
+          const c = document.createElement('div');
+          c.className = 'confetti';
+          c.style.left = (Math.random()*100) + 'vw';
+          c.style.top = '-20px';
+          c.style.background = colors[Math.floor(Math.random()*colors.length)];
+          c.style.transform = `rotate(${Math.random()*360}deg)`;
+          document.body.appendChild(c);
+          const duration = 2000 + Math.random()*2000;
+          const start = performance.now();
+          const drift = (Math.random()*2-1) * 120;
+          function frame(t){
+            const k = Math.min(1, (t-start)/duration);
+            c.style.top = (k*100) + 'vh';
+            c.style.left = `calc(${parseFloat(c.style.left)}vw + ${drift*k}px)`;
+            c.style.transform = `rotate(${k*720}deg)`;
+            if (k < 1) requestAnimationFrame(frame); else c.remove();
+          }
+          requestAnimationFrame(frame);
+        }
+      }
+
+      function fanfare(){
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination);
+        function note(freq, time, len=0.25){
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = freq;
+          g.gain.setValueAtTime(0, time);
+          g.gain.linearRampToValueAtTime(0.8, time + 0.01);
+          g.gain.linearRampToValueAtTime(0, time + len);
+          o.connect(g); g.connect(master);
+          o.start(time); o.stop(time + len + 0.02);
+        }
+        const now = ctx.currentTime + 0.05;
+        [523,659,784,1046,784,988,1046].forEach((f, i) => note(f, now + i*0.22, 0.2));
+      }
+
+      function impactEffects() {
+        scene.classList.add('shake');
+        setTimeout(()=> scene.classList.remove('shake'), 350);
+
+        booms.forEach((b, i) => {
+          setTimeout(()=> { b.classList.add('show'); setTimeout(()=> b.classList.remove('show'), 450); }, i*100);
+        });
+
+        const rect = enemy.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top + rect.height/2;
+        for (let i=0;i<24;i++) makeParticle(cx, cy);
+
+        health = Math.max(0, health - (8 + Math.random()*10));
+        healthFill.style.width = health + '%';
+
+        if (health <= 0) {
+          enemy.style.filter = 'grayscale(1) brightness(0.5)';
+          enemy.style.transform = 'scale(0.8)';
+          enemy.style.opacity = '0.2';
+          confettiBurst();
+          fanfare();
+          victory.classList.add('show');
+          // Keep background music playing on victory. (Change to stopMusic() if desired.)
+        }
+      }
+
+      function animateCannonball(startX, startY, endX, duration=1500) {
+        const ball = document.createElement('div');
+        ball.className = 'cannonball';
+        document.body.appendChild(ball);
+        ball.style.left = startX + 'px';
+        ball.style.bottom = startY + 'px';
+        ball.style.opacity = 1;
+        const start = performance.now();
+        function frame(t){
+          const p = Math.min(1, (t - start)/duration);
+          const x = startX + (endX - startX) * p;
+          const y = startY + Math.sin(p * Math.PI) * 40 - p * 10;
+          ball.style.transform = `translate(${x - startX}px, ${-y}px)`;
+          if (p < 1) requestAnimationFrame(frame);
+          else { ball.style.opacity = 0; ball.remove(); impactEffects(); }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function fireOne() {
+        speak('Fire!');
+        playSfx(cannon);
+        const startX = 160;
+        const startY = 150;
+        const endX = window.innerWidth - 180;
+        animateCannonball(startX, startY, endX, 1400 + Math.random()*200);
+        setTimeout(()=> playSfx(splash), 1100);
+      }
+
+      function fireVolley(count=7, spacing=160) {
+        if (firing || victory.classList.contains('show')) return;
+        firing = true;
+        speak('Full volley!');
+        let i = 0;
+        (function loop(){
+          fireOne();
+          i++;
+          if (i < count && health > 0) setTimeout(loop, spacing);
+          else setTimeout(()=> firing=false, spacing + 400);
+        })();
+      }
+
+      fireBtn.addEventListener('click', () => {
+        if (firing || victory.classList.contains('show')) return;
+        firing = true;
+        fireOne();
+        setTimeout(()=> firing=false, 1600);
+      });
+
+      volleyBtn.addEventListener('click', () => fireVolley(9, 140));
+
+      restartBtn.addEventListener('click', () => {
+        health = 100;
+        healthFill.style.width = '100%';
+        enemy.style.filter = 'none';
+        enemy.style.transform = 'none';
+        enemy.style.opacity = '1';
+        victory.classList.remove('show');
+      });
+    });
+  })();
+  </script>
+</body>
+</html>
