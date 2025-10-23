@@ -146,237 +146,258 @@
 
     <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
   </div>
-
+<audio id="bgm" src="https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg" preload="auto" loop></audio>
  <script>
 (function(){
-  const scene = document.getElementById('scene');
-  const fireBtn = document.getElementById('fireBtn');
-  const volleyBtn = document.getElementById('volleyBtn');
-  const musicBtn = document.getElementById('musicBtn');
-  const enemy = document.getElementById('enemy');
-  const healthFill = document.getElementById('healthFill');
-  const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
-  const victory = document.getElementById('victory');
-  const restartBtn = document.getElementById('restartBtn');
-
-  // Sound effects
-  const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
-  const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
-  const voice = new SpeechSynthesisUtterance('Captain Seawall unleashes a devastating barrage on Ball Pond Scum!');
-  voice.rate = 0.95; voice.pitch = 0.55;
-
-  let firing = false;
-  let health = 100;
-
-  // ==== MUSIC: Victory at Sea with autoplay-unlock ====
-  let musicOn = false;
-  let musicTrack = null;
-  let musicArmed = false; // to avoid wiring multiple unlock listeners
-
-  function speak(text) {
-    try { if (text) voice.text = text; window.speechSynthesis.cancel(); window.speechSynthesis.speak(voice); } catch(e) {}
-  }
-  function play(aud) { try { aud.currentTime = 0; aud.play(); } catch(e) {} }
-
-  function makeMusic(){
-    if (musicTrack) return musicTrack;
-    musicTrack = new Audio('https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg');
-    musicTrack.loop = true;
-    musicTrack.volume = 0.45;
-    return musicTrack;
+  function ready(fn){ 
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true});
+    else fn();
   }
 
-  async function tryPlayMusic(){
-    const a = makeMusic();
-    try {
-      await a.play();
-      musicBtn.textContent = '🎵 Music: On';
-      return true;
-    } catch (e) {
-      if (!musicArmed) {
-        musicArmed = true;
-        const unlock = async () => {
-          try { await a.play(); musicBtn.textContent = '🎵 Music: On'; }
-          catch { musicBtn.textContent = '🎵 Click to Play Music'; }
-          finally {
-            window.removeEventListener('pointerdown', unlock, true);
-            window.removeEventListener('keydown', unlock, true);
-            window.removeEventListener('touchstart', unlock, true);
-          }
-        };
-        window.addEventListener('pointerdown', unlock, true);
-        window.addEventListener('keydown', unlock, true);
-        window.addEventListener('touchstart', unlock, true);
-        musicBtn.textContent = '🎵 Click to Play Music';
+  ready(function(){
+    // ---- DOM refs (defensive in case IDs change) ----
+    const scene = document.getElementById('scene');
+    const fireBtn = document.getElementById('fireBtn');
+    const volleyBtn = document.getElementById('volleyBtn');
+    const musicBtn = document.getElementById('musicBtn');
+    const enemy = document.getElementById('enemy');
+    const healthFill = document.getElementById('healthFill');
+    const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
+    const victory = document.getElementById('victory');
+    const restartBtn = document.getElementById('restartBtn');
+    const bgm = document.getElementById('bgm');
+
+    // Ensure required elements exist
+    if (!scene || !fireBtn || !volleyBtn || !musicBtn || !enemy || !healthFill || !victory || !restartBtn || !bgm) {
+      console.error('One or more required elements are missing. Check IDs in HTML.');
+      return;
+    }
+
+    // ---- SFX ----
+    const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
+    const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
+    const voice = new SpeechSynthesisUtterance('Captain Seawall unleashes a devastating barrage on Ball Pond Scum!');
+    voice.rate = 0.95; voice.pitch = 0.55;
+
+    function speak(text){ try { if (text) voice.text = text; speechSynthesis.cancel(); speechSynthesis.speak(voice); } catch(e){} }
+    function play(aud){ try { aud.currentTime = 0; aud.play(); } catch(e){} }
+
+    // ---- Music: Victory at Sea with autoplay unlock ----
+    let musicOn = false;
+    let unlockArmed = false;
+
+    bgm.volume = 0.45;
+
+    async function tryPlay(){
+      try {
+        await bgm.play();
+        musicBtn.textContent = '🎵 Music: On';
+        return true;
+      } catch (e) {
+        // Autoplay blocked — arm one-time unlock on any user gesture
+        if (!unlockArmed) {
+          unlockArmed = true;
+          const unlock = async () => {
+            try { await bgm.play(); musicBtn.textContent = '🎵 Music: On'; }
+            finally {
+              window.removeEventListener('pointerdown', unlock, true);
+              window.removeEventListener('keydown', unlock, true);
+              window.removeEventListener('touchstart', unlock, true);
+            }
+          };
+          window.addEventListener('pointerdown', unlock, true);
+          window.addEventListener('keydown', unlock, true);
+          window.addEventListener('touchstart', unlock, true);
+          musicBtn.textContent = '🎵 Click to Play Music';
+        }
+        return false;
       }
-      return false;
     }
-  }
 
-  async function startMusic(){
-    if (musicOn) return;
-    musicOn = true;
-    await tryPlayMusic();
-  }
-
-  function stopMusic(){
-    musicOn = false;
-    if (musicTrack) musicTrack.pause();
-    musicBtn.textContent = '🎵 Music: Off';
-  }
-
-  musicBtn.addEventListener('click', async () => {
-    if (!musicOn) await startMusic();
-    else stopMusic();
-  });
-
-  // Try to start on load; if blocked, first tap/click/keypress will start it.
-  window.addEventListener('load', () => { startMusic(); });
-
-  // If user switches back to the tab and had music on, ensure it resumes.
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && musicOn && musicTrack && musicTrack.paused) {
-      tryPlayMusic();
+    async function startMusic(){
+      if (musicOn) return;
+      musicOn = true;
+      await tryPlay();
     }
-  });
-  // ==== /MUSIC ====
 
-  function makeParticle(x, y) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.style.left = x + 'px';
-    p.style.top = y + 'px';
-    document.body.appendChild(p);
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 80 + Math.random() * 140;
-    const life = 500 + Math.random() * 400;
-    const start = performance.now();
-    p.style.opacity = 1;
-    function frame(t){
-      const dt = t - start;
-      const k = Math.min(1, dt/life);
-      const dx = Math.cos(angle) * speed * k;
-      const dy = Math.sin(angle) * speed * k + 0.5 * 400 * (k*k);
-      p.style.transform = `translate(${dx}px, ${dy}px) scale(${1-k})`;
-      p.style.opacity = 1-k;
-      if (k < 1) requestAnimationFrame(frame);
-      else p.remove();
+    function stopMusic(){
+      musicOn = false;
+      try { bgm.pause(); } catch(e){}
+      musicBtn.textContent = '🎵 Music: Off';
     }
-    requestAnimationFrame(frame);
-  }
 
-  function confettiBurst() {
-    const colors = ['#fde047','#60a5fa','#fb7185','#34d399','#fbbf24','#c084fc'];
-    for (let i=0;i<120;i++) {
-      const c = document.createElement('div');
-      c.className = 'confetti';
-      c.style.left = (Math.random()*100) + 'vw';
-      c.style.top = '-20px';
-      c.style.background = colors[Math.floor(Math.random()*colors.length)];
-      c.style.transform = `rotate(${Math.random()*360}deg)`;
-      document.body.appendChild(c);
-      const duration = 2000 + Math.random()*2000;
+    // Try to start as soon as the page is interactive
+    startMusic();
+
+    // Toggle button
+    musicBtn.addEventListener('click', async () => {
+      if (!musicOn) await startMusic();
+      else stopMusic();
+    });
+
+    // If user returns to tab and wanted music, try resume
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && musicOn && bgm.paused) tryPlay();
+    });
+
+    // ---- Gameplay state ----
+    let firing = false;
+    let health = 100;
+
+    function makeParticle(x, y) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = x + 'px';
+      p.style.top = y + 'px';
+      document.body.appendChild(p);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 80 + Math.random() * 140;
+      const life = 500 + Math.random() * 400;
       const start = performance.now();
-      const drift = (Math.random()*2-1) * 120;
+      p.style.opacity = 1;
       function frame(t){
-        const k = Math.min(1, (t-start)/duration);
-        c.style.top = (k*100) + 'vh';
-        c.style.left = `calc(${parseFloat(c.style.left)}vw + ${drift*k}px)`;
-        c.style.transform = `rotate(${k*720}deg)`;
-        if (k < 1) requestAnimationFrame(frame);
-        else c.remove();
+        const dt = t - start;
+        const k = Math.min(1, dt/life);
+        const dx = Math.cos(angle) * speed * k;
+        const dy = Math.sin(angle) * speed * k + 0.5 * 400 * (k*k);
+        p.style.transform = `translate(${dx}px, ${dy}px) scale(${1-k})`;
+        p.style.opacity = 1-k;
+        if (k < 1) requestAnimationFrame(frame); else p.remove();
       }
       requestAnimationFrame(frame);
     }
-  }
 
-  function fanfare(){
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination);
-    function note(freq, time, len=0.25){
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'triangle'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0, time);
-      g.gain.linearRampToValueAtTime(0.8, time + 0.01);
-      g.gain.linearRampToValueAtTime(0, time + len);
-      o.connect(g); g.connect(master);
-      o.start(time); o.stop(time + len + 0.02);
-    }
-    const now = ctx.currentTime + 0.05;
-    const seq = [523, 659, 784, 1046, 784, 988, 1046];
-    seq.forEach((f, i) => note(f, now + i*0.22, 0.2));
-  }
-
-  function impactEffects() {
-    scene.classList.add('shake');
-    setTimeout(()=> scene.classList.remove('shake'), 350);
-
-    booms.forEach((b, i) => {
-      setTimeout(()=> { b.classList.add('show'); setTimeout(()=> b.classList.remove('show'), 450); }, i*100);
-    });
-
-    const rect = enemy.getBoundingClientRect();
-    const cx = rect.left + rect.width/2;
-    const cy = rect.top + rect.height/2;
-    for (let i=0;i<24;i++) makeParticle(cx, cy);
-
-    health = Math.max(0, health - (8 + Math.random()*10));
-    healthFill.style.width = health + '%';
-
-    if (health <= 0) {
-      enemy.style.filter = 'grayscale(1) brightness(0.5)';
-      enemy.style.transform = 'scale(0.8)';
-      enemy.style.opacity = '0.2';
-      confettiBurst();
-      fanfare();
-      victory.classList.add('show');
-      stopMusic(); // stop background track on victory
-    }
-  }
-
-  function animateCannonball(startX, startY, endX, duration=1500) {
-    const ball = document.createElement('div');
-    ball.className = 'cannonball';
-    document.body.appendChild(ball);
-    ball.style.left = startX + 'px';
-    ball.style.bottom = startY + 'px';
-    ball.style.opacity = 1;
-    const start = performance.now();
-    function frame(t){
-      const p = Math.min(1, (t - start)/duration);
-      const x = startX + (endX - startX) * p;
-      const y = startY + Math.sin(p * Math.PI) * 40 - p * 10;
-      ball.style.transform = `translate(${x - startX}px, ${-y}px)`;
-      if (p < 1) requestAnimationFrame(frame);
-      else {
-        ball.style.opacity = 0;
-        ball.remove();
-        impactEffects();
+    function confettiBurst() {
+      const colors = ['#fde047','#60a5fa','#fb7185','#34d399','#fbbf24','#c084fc'];
+      for (let i=0;i<120;i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = (Math.random()*100) + 'vw';
+        c.style.top = '-20px';
+        c.style.background = colors[Math.floor(Math.random()*colors.length)];
+        c.style.transform = `rotate(${Math.random()*360}deg)`;
+        document.body.appendChild(c);
+        const duration = 2000 + Math.random()*2000;
+        const start = performance.now();
+        const drift = (Math.random()*2-1) * 120;
+        function frame(t){
+          const k = Math.min(1, (t-start)/duration);
+          c.style.top = (k*100) + 'vh';
+          c.style.left = `calc(${parseFloat(c.style.left)}vw + ${drift*k}px)`;
+          c.style.transform = `rotate(${k*720}deg)`;
+          if (k < 1) requestAnimationFrame(frame); else c.remove();
+        }
+        requestAnimationFrame(frame);
       }
     }
-    requestAnimationFrame(frame);
-  }
 
-  function fireOne() {
-    speak('Fire!');
-    play(cannon);
-    const startX = 160;
-    const startY = 150;
-    const endX = window.innerWidth - 180;
-    animateCannonball(startX, startY, endX, 1400 + Math.random()*200);
-    setTimeout(()=> play(splash), 1100);
-  }
+    function fanfare(){
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination);
+      function note(freq, time, len=0.25){
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, time);
+        g.gain.linearRampToValueAtTime(0.8, time + 0.01);
+        g.gain.linearRampToValueAtTime(0, time + len);
+        o.connect(g); g.connect(master);
+        o.start(time); o.stop(time + len + 0.02);
+      }
+      const now = ctx.currentTime + 0.05;
+      [523,659,784,1046,784,988,1046].forEach((f, i) => note(f, now + i*0.22, 0.2));
+    }
 
-  function fireVolley(count=7, spacing=160) {
-    if (firing || victory.classList.contains('show')) return;
-    firing = true;
-    speak('Full volley!');
-    let i = 0;
-    (function loop(){
+    function impactEffects() {
+      scene.classList.add('shake');
+      setTimeout(()=> scene.classList.remove('shake'), 350);
+
+      booms.forEach((b, i) => {
+        setTimeout(()=> { b.classList.add('show'); setTimeout(()=> b.classList.remove('show'), 450); }, i*100);
+      });
+
+      const rect = enemy.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top + rect.height/2;
+      for (let i=0;i<24;i++) makeParticle(cx, cy);
+
+      health = Math.max(0, health - (8 + Math.random()*10));
+      healthFill.style.width = health + '%';
+
+      if (health <= 0) {
+        enemy.style.filter = 'grayscale(1) brightness(0.5)';
+        enemy.style.transform = 'scale(0.8)';
+        enemy.style.opacity = '0.2';
+        confettiBurst();
+        fanfare();
+        victory.classList.add('show');
+        // If you prefer the music to continue, comment the next line:
+        // stopMusic();
+      }
+    }
+
+    function animateCannonball(startX, startY, endX, duration=1500) {
+      const ball = document.createElement('div');
+      ball.className = 'cannonball';
+      document.body.appendChild(ball);
+      ball.style.left = startX + 'px';
+      ball.style.bottom = startY + 'px';
+      ball.style.opacity = 1;
+      const start = performance.now();
+      function frame(t){
+        const p = Math.min(1, (t - start)/duration);
+        const x = startX + (endX - startX) * p;
+        const y = startY + Math.sin(p * Math.PI) * 40 - p * 10;
+        ball.style.transform = `translate(${x - startX}px, ${-y}px)`;
+        if (p < 1) requestAnimationFrame(frame);
+        else { ball.style.opacity = 0; ball.remove(); impactEffects(); }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function fireOne() {
+      speak('Fire!');
+      play(cannon);
+      const startX = 160;
+      const startY = 150;
+      const endX = window.innerWidth - 180;
+      animateCannonball(startX, startY, endX, 1400 + Math.random()*200);
+      setTimeout(()=> play(splash), 1100);
+    }
+
+    function fireVolley(count=7, spacing=160) {
+      if (firing || victory.classList.contains('show')) return;
+      firing = true;
+      speak('Full volley!');
+      let i = 0;
+      (function loop(){
+        fireOne();
+        i++;
+        if (i < count && health > 0) setTimeout(loop, spacing);
+        else setTimeout(()=> firing=false, spacing + 400);
+      })();
+    }
+
+    fireBtn.addEventListener('click', () => {
+      if (firing || victory.classList.contains('show')) return;
+      firing = true;
       fireOne();
-      i++;
-      if (i < count && health > 0) setTimeout(loop, sp
+      setTimeout(()=> firing=false, 1600);
+    });
+
+    volleyBtn.addEventListener('click', () => fireVolley(9, 140));
+
+    restartBtn.addEventListener('click', () => {
+      health = 100;
+      healthFill.style.width = '100%';
+      enemy.style.filter = 'none';
+      enemy.style.transform = 'none';
+      enemy.style.opacity = '1';
+      victory.classList.remove('show');
+    });
+  }); // /ready
+})();
+</script>
 
 </body>
 </html>
