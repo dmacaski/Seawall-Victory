@@ -28,11 +28,7 @@
     .btn:hover { background: #fde047; }
     .btn.secondary { background: #e5e7eb; }
     .btn.secondary:hover { background: #f3f4f6; }
-    .cannonball {
-      position: absolute; left: 160px; bottom: 150px;
-      width: 18px; height: 18px; background: #d1d5db; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,.3);
-      opacity: 0; pointer-events: none;
-    }
+    .cannonball { position: absolute; left: 160px; bottom: 150px; width: 18px; height: 18px; background: #d1d5db; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,.3); opacity: 0; pointer-events: none; }
     .enemyWrap { position: absolute; right: 30px; bottom: 80px; text-align:center; }
     .enemy {
       width: 120px; height: 120px; border-radius: 50%;
@@ -44,43 +40,20 @@
       transition: filter .4s ease, opacity .4s ease, transform .4s ease;
     }
     @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
-    .boom {
-      position: absolute; top: -10px; left: 50%; transform: translateX(-50%) scale(0);
-      opacity: 0; transition: transform .25s ease, opacity .25s ease;
-      pointer-events: none;
-    }
+    .boom { position: absolute; top: -10px; left: 50%; transform: translateX(-50%) scale(0); opacity: 0; transition: transform .25s ease, opacity .25s ease; pointer-events: none; }
     .boom.show { transform: translateX(-50%) scale(1.1); opacity: 1; }
     .name { font-weight: 800; color: #d9f99d; font-size: 12px; padding: 0 6px; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
-    .health {
-      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-      width: 160px; height: 10px; background: rgba(255,255,255,.25); border-radius: 999px; overflow: hidden;
-      box-shadow: 0 2px 6px rgba(0,0,0,.2);
-    }
+    .health { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 160px; height: 10px; background: rgba(255,255,255,.25); border-radius: 999px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
     .healthFill { height: 100%; width: 100%; background: linear-gradient(90deg, #16a34a, #f59e0b, #ef4444); transition: width .25s ease; }
     .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 6px rgba(251,146,60,.8); opacity: 0; pointer-events: none; }
     .confetti { position: absolute; width: 10px; height: 16px; opacity: 0.95; transform: rotate(0deg); will-change: transform, top, left; }
     .shake { animation: shake .35s ease; }
-    @keyframes shake {
-      0%{ transform: translate(0,0); } 20%{ transform: translate(-6px, 4px); }
-      40%{ transform: translate(6px, -3px); } 60%{ transform: translate(-3px, 3px); }
-      80%{ transform: translate(3px, -2px); } 100%{ transform: translate(0,0); }
-    }
-    .victory {
-      position: absolute; inset: 0; display:none; align-items:center; justify-content:center; flex-direction: column;
-      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); text-align:center;
-    }
+    @keyframes shake { 0%{transform:translate(0,0);}20%{transform:translate(-6px,4px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-3px,3px);}80%{transform:translate(3px,-2px);}100%{transform:translate(0,0);} }
+    .victory { position: absolute; inset: 0; display:none; align-items:center; justify-content:center; flex-direction: column; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); text-align:center; }
     .victory.show { display:flex; animation: fadeIn .35s ease; }
-    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
     .banner { font-size: 44px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,.5); margin-bottom: 8px; }
     .subtitle { opacity: .95; margin-bottom: 12px; }
-
-    /* Tiny toast for audio status */
-    .toast {
-      position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
-      background: rgba(0,0,0,.6); padding: 8px 12px; border-radius: 999px; font-size: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.3); opacity: 0; transition: opacity .25s ease;
-    }
-    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -111,15 +84,15 @@
         <div class="name">Ball Pond Scum</div>
         <svg class="boom" id="boom1" width="90" height="90" viewBox="0 0 100 100" fill="none">
           <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
-                   fill="#fb923c" stroke="#7c2d12" stroke-width="3"></polygon>
+            fill="#fb923c" stroke="#7c2d12" stroke-width="3"></polygon>
         </svg>
-        <svg class="boom" id="boom2" width="60" height="60" viewBox="0 0 100 100" fill="none" style="top: 20px; left: 20%;">
+        <svg class="boom" id="boom2" width="60" height="60" viewBox="0 0 100 100" fill="none" style="top:20px; left:20%;">
           <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
-                   fill="#f97316" stroke="#7c2d12" stroke-width="3"></polygon>
+            fill="#f97316" stroke="#7c2d12" stroke-width="3"></polygon>
         </svg>
-        <svg class="boom" id="boom3" width="70" height="70" viewBox="0 0 100 100" fill="none" style="top: 10px; left: 70%;">
+        <svg class="boom" id="boom3" width="70" height="70" viewBox="0 0 100 100" fill="none" style="top:10px; left:70%;">
           <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
-                   fill="#fdba74" stroke="#7c2d12" stroke-width="3"></polygon>
+            fill="#fdba74" stroke="#7c2d12" stroke-width="3"></polygon>
         </svg>
       </div>
     </div>
@@ -127,269 +100,90 @@
     <div class="victory" id="victory">
       <div class="banner">🏴‍☠️ Victory!</div>
       <div class="subtitle">Captain Seawall defeats Ball Pond Scum</div>
-      <div class="controls">
-        <button class="btn" id="restartBtn">↻ Restart Battle</button>
-      </div>
+      <div class="controls"><button class="btn" id="restartBtn">↻ Restart Battle</button></div>
     </div>
 
     <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
   </div>
 
-  <!-- Background music (MP3 first for Safari/iOS, OGG fallback) -->
-  <audio id="bgm" preload="auto" loop crossorigin="anonymous">
-    <source src="./victory_at_sea.mp3" type="audio/mpeg"> <!-- ← add this file to your repo root -->
+  <audio id="bgm" preload="auto" loop autoplay muted crossorigin="anonymous">
+    <source src="./victory_at_sea.mp3" type="audio/mpeg">
     <source src="https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg" type="audio/ogg">
   </audio>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
   <script>
   (function(){
-    function ready(fn){ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true}); else fn(); }
-    function showToast(msg, ms=2000){
-      const t = document.getElementById('toast'); if(!t) return;
-      t.textContent = msg; t.classList.add('show');
-      setTimeout(()=> t.classList.remove('show'), ms);
-    }
+    const fireBtn = document.getElementById('fireBtn');
+    const volleyBtn = document.getElementById('volleyBtn');
+    const musicBtn = document.getElementById('musicBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const enemy = document.getElementById('enemy');
+    const healthFill = document.getElementById('healthFill');
+    const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
+    const victory = document.getElementById('victory');
+    const scene = document.getElementById('scene');
+    const bgm = document.getElementById('bgm');
 
-    ready(function(){
-      const scene = document.getElementById('scene');
-      const fireBtn = document.getElementById('fireBtn');
-      const volleyBtn = document.getElementById('volleyBtn');
-      const musicBtn = document.getElementById('musicBtn');
-      const enemy = document.getElementById('enemy');
-      const healthFill = document.getElementById('healthFill');
-      const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
-      const victory = document.getElementById('victory');
-      const restartBtn = document.getElementById('restartBtn');
-      const bgm = document.getElementById('bgm');
+    // --- MUSIC SETUP ---
+    bgm.volume = 0.5;
+    (async()=>{ try { await bgm.play(); } catch(e){} })();
+    const unlock = async()=>{ try{ bgm.muted=false; if(bgm.paused) await bgm.play(); }catch(e){} };
+    window.addEventListener('click',unlock,{once:true});
+    window.addEventListener('keydown',unlock,{once:true});
+    window.addEventListener('touchstart',unlock,{once:true});
 
-      if (!scene || !fireBtn || !volleyBtn || !musicBtn || !enemy || !healthFill || !victory || !restartBtn || !bgm) {
-        console.error('Missing required elements.'); return;
-      }
-
-      // --- SFX ---
-      const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
-      const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
-      const voice = new SpeechSynthesisUtterance('Captain Seawall unleashes a devastating barrage on Ball Pond Scum!');
-      voice.rate = 0.95; voice.pitch = 0.55;
-      function speak(text){ try { if (text) voice.text = text; speechSynthesis.cancel(); speechSynthesis.speak(voice); } catch(e){} }
-      function playSfx(a){ try { a.currentTime = 0; a.play(); } catch(e){} }
-
-      // --- Music wiring (no fragile flags; rely on player state) ---
-      bgm.volume = 0.45;
-
-      function syncMusicUi(){
-        musicBtn.textContent = bgm.paused ? '🎵 Music: Off' : '🎵 Music: On';
-      }
-      bgm.addEventListener('play', syncMusicUi);
-      bgm.addEventListener('pause', syncMusicUi);
-      bgm.addEventListener('loadeddata', ()=> { /* ready to play */ });
-
-      async function playMusic(){
-        try {
-          await bgm.play();
-        } catch(e) {
-          // Autoplay blocked — arm one-time user gesture unlock
-          const unlock = async () => {
-            try { await bgm.play(); showToast('Music started'); }
-            catch { showToast('Tap 🎵 to play music'); }
-            finally {
-              window.removeEventListener('pointerdown', unlock, true);
-              window.removeEventListener('keydown', unlock, true);
-              window.removeEventListener('touchstart', unlock, true);
-            }
-          };
-          window.addEventListener('pointerdown', unlock, true);
-          window.addEventListener('keydown', unlock, true);
-          window.addEventListener('touchstart', unlock, true);
-          showToast('Tap anywhere once to start music');
-        }
-      }
-
-      // MP3 presence check (helps Safari users)
-      // If MP3 fails to load, Safari likely can’t play OGG — tell user to add the MP3.
-      const mp3Src = Array.from(bgm.querySelectorAll('source')).find(s => /audio\/mpeg/i.test(s.type));
-      if (mp3Src && mp3Src.src.endsWith('victory_at_sea.mp3')) {
-        fetch(mp3Src.src, { method: 'HEAD', mode: 'no-cors' })
-          .catch(()=>{}) // ignore CORS errors; just try to play and rely on events
-          .finally(()=> playMusic());
-      } else {
-        playMusic();
-      }
-
-      // Button toggles actual player state (not a custom flag)
-      musicBtn.addEventListener('click', async () => {
-        if (bgm.paused) {
-          try { await bgm.play(); } catch { showToast('Browser blocked autoplay — tap once'); }
-        } else {
-          bgm.pause();
-        }
-      });
-
-      // Resume if user returns to tab and audio is paused after being started
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !bgm.paused && bgm.currentTime > 0) {
-          // no-op; UI stays synced via events
-        }
-      });
-
-      // --- Gameplay state ---
-      let firing = false;
-      let health = 100;
-
-      function makeParticle(x, y) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = x + 'px';
-        p.style.top = y + 'px';
-        document.body.appendChild(p);
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 80 + Math.random() * 140;
-        const life = 500 + Math.random() * 400;
-        const start = performance.now();
-        p.style.opacity = 1;
-        function frame(t){
-          const k = Math.min(1, (t - start)/life);
-          const dx = Math.cos(angle) * speed * k;
-          const dy = Math.sin(angle) * speed * k + 0.5 * 400 * (k*k);
-          p.style.transform = `translate(${dx}px, ${dy}px) scale(${1-k})`;
-          p.style.opacity = 1-k;
-          if (k < 1) requestAnimationFrame(frame); else p.remove();
-        }
-        requestAnimationFrame(frame);
-      }
-
-      function confettiBurst() {
-        const colors = ['#fde047','#60a5fa','#fb7185','#34d399','#fbbf24','#c084fc'];
-        for (let i=0;i<120;i++) {
-          const c = document.createElement('div');
-          c.className = 'confetti';
-          c.style.left = (Math.random()*100) + 'vw';
-          c.style.top = '-20px';
-          c.style.background = colors[Math.floor(Math.random()*colors.length)];
-          c.style.transform = `rotate(${Math.random()*360}deg)`;
-          document.body.appendChild(c);
-          const duration = 2000 + Math.random()*2000;
-          const start = performance.now();
-          const drift = (Math.random()*2-1) * 120;
-          function frame(t){
-            const k = Math.min(1, (t-start)/duration);
-            c.style.top = (k*100) + 'vh';
-            c.style.left = `calc(${parseFloat(c.style.left)}vw + ${drift*k}px)`;
-            c.style.transform = `rotate(${k*720}deg)`;
-            if (k < 1) requestAnimationFrame(frame); else c.remove();
-          }
-          requestAnimationFrame(frame);
-        }
-      }
-
-      function fanfare(){
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination);
-        function note(freq, time, len=0.25){
-          const o = ctx.createOscillator();
-          const g = ctx.createGain();
-          o.type = 'triangle'; o.frequency.value = freq;
-          g.gain.setValueAtTime(0, time);
-          g.gain.linearRampToValueAtTime(0.8, time + 0.01);
-          g.gain.linearRampToValueAtTime(0, time + len);
-          o.connect(g); g.connect(master);
-          o.start(time); o.stop(time + len + 0.02);
-        }
-        const now = ctx.currentTime + 0.05;
-        [523,659,784,1046,784,988,1046].forEach((f, i) => note(f, now + i*0.22, 0.2));
-      }
-
-      function impactEffects() {
-        scene.classList.add('shake');
-        setTimeout(()=> scene.classList.remove('shake'), 350);
-
-        booms.forEach((b, i) => {
-          setTimeout(()=> { b.classList.add('show'); setTimeout(()=> b.classList.remove('show'), 450); }, i*100);
-        });
-
-        const rect = enemy.getBoundingClientRect();
-        const cx = rect.left + rect.width/2;
-        const cy = rect.top + rect.height/2;
-        for (let i=0;i<24;i++) makeParticle(cx, cy);
-
-        health = Math.max(0, health - (8 + Math.random()*10));
-        healthFill.style.width = health + '%';
-
-        if (health <= 0) {
-          enemy.style.filter = 'grayscale(1) brightness(0.5)';
-          enemy.style.transform = 'scale(0.8)';
-          enemy.style.opacity = '0.2';
-          confettiBurst();
-          fanfare();
-          victory.classList.add('show');
-        }
-      }
-
-      function animateCannonball(startX, startY, endX, duration=1500) {
-        const ball = document.createElement('div');
-        ball.className = 'cannonball';
-        document.body.appendChild(ball);
-        ball.style.left = startX + 'px';
-        ball.style.bottom = startY + 'px';
-        ball.style.opacity = 1;
-        const start = performance.now();
-        function frame(t){
-          const p = Math.min(1, (t - start)/duration);
-          const x = startX + (endX - startX) * p;
-          const y = startY + Math.sin(p * Math.PI) * 40 - p * 10;
-          ball.style.transform = `translate(${x - startX}px, ${-y}px)`;
-          if (p < 1) requestAnimationFrame(frame);
-          else { ball.style.opacity = 0; ball.remove(); impactEffects(); }
-        }
-        requestAnimationFrame(frame);
-      }
-
-      function fireOne() {
-        speak('Fire!');
-        playSfx(cannon);
-        const startX = 160;
-        const startY = 150;
-        const endX = window.innerWidth - 180;
-        animateCannonball(startX, startY, endX, 1400 + Math.random()*200);
-        setTimeout(()=> playSfx(splash), 1100);
-      }
-
-      function fireVolley(count=7, spacing=160) {
-        if (firing || victory.classList.contains('show')) return;
-        firing = true;
-        speak('Full volley!');
-        let i = 0;
-        (function loop(){
-          fireOne();
-          i++;
-          if (i < count && health > 0) setTimeout(loop, spacing);
-          else setTimeout(()=> firing=false, spacing + 400);
-        })();
-      }
-
-      fireBtn.addEventListener('click', () => {
-        if (firing || victory.classList.contains('show')) return;
-        firing = true;
-        fireOne();
-        setTimeout(()=> firing=false, 1600);
-      });
-
-      volleyBtn.addEventListener('click', () => fireVolley(9, 140));
-
-      restartBtn.addEventListener('click', () => {
-        health = 100;
-        healthFill.style.width = '100%';
-        enemy.style.filter = 'none';
-        enemy.style.transform = 'none';
-        enemy.style.opacity = '1';
-        victory.classList.remove('show');
-      });
-
-      // Initial UI sync
-      syncMusicUi();
+    musicBtn.addEventListener('click',async()=>{
+      if(bgm.paused){ await bgm.play(); bgm.muted=false; musicBtn.textContent='🎵 Music: On'; }
+      else { bgm.pause(); musicBtn.textContent='🎵 Music: Off'; }
     });
+
+    // --- SOUND EFFECTS ---
+    const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
+    const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
+    const speak = (t)=>{ try{const v=new SpeechSynthesisUtterance(t);v.rate=0.95;v.pitch=0.55;speechSynthesis.speak(v);}catch(e){} };
+
+    let firing=false, health=100;
+    function makeParticle(x,y){
+      const p=document.createElement('div');
+      p.className='particle';p.style.left=x+'px';p.style.top=y+'px';
+      document.body.appendChild(p);
+      const angle=Math.random()*Math.PI*2, speed=80+Math.random()*140, life=500+Math.random()*400, start=performance.now();
+      p.style.opacity=1;
+      function frame(t){ const k=Math.min(1,(t-start)/life);
+        const dx=Math.cos(angle)*speed*k, dy=Math.sin(angle)*speed*k+0.5*400*(k*k);
+        p.style.transform=`translate(${dx}px,${dy}px) scale(${1-k})`;p.style.opacity=1-k;
+        if(k<1)requestAnimationFrame(frame);else p.remove();
+      } requestAnimationFrame(frame);
+    }
+    function confetti(){ const c=['#fde047','#60a5fa','#fb7185','#34d399','#fbbf24','#c084fc'];
+      for(let i=0;i<120;i++){const d=document.createElement('div');d.className='confetti';
+        d.style.left=(Math.random()*100)+'vw';d.style.top='-20px';
+        d.style.background=c[Math.floor(Math.random()*c.length)];
+        document.body.appendChild(d);const duration=2000+Math.random()*2000,start=performance.now(),drift=(Math.random()*2-1)*120;
+        function f(t){const k=Math.min(1,(t-start)/duration);d.style.top=(k*100)+'vh';d.style.left=`calc(${parseFloat(d.style.left)}vw + ${drift*k}px)`;d.style.transform=`rotate(${k*720}deg)`;if(k<1)requestAnimationFrame(f);else d.remove();}requestAnimationFrame(f);}
+    }
+    function fanfare(){ const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const master=ctx.createGain();master.gain.value=0.25;master.connect(ctx.destination);
+      const n=(f,t,l=0.25)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.8,t+0.01);g.gain.linearRampToValueAtTime(0,t+l);o.connect(g);g.connect(master);o.start(t);o.stop(t+l+0.02);};
+      const now=ctx.currentTime+0.05;[523,659,784,1046,784,988,1046].forEach((f,i)=>n(f,now+i*0.22,0.2));
+    }
+    function impact(){
+      scene.classList.add('shake');setTimeout(()=>scene.classList.remove('shake'),350);
+      booms.forEach((b,i)=>{setTimeout(()=>{b.classList.add('show');setTimeout(()=>b.classList.remove('show'),450);},i*100);});
+      const r=enemy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+      for(let i=0;i<24;i++)makeParticle(cx,cy);
+      health=Math.max(0,health-(8+Math.random()*10));healthFill.style.width=health+'%';
+      if(health<=0){enemy.style.filter='grayscale(1) brightness(0.5)';enemy.style.transform='scale(0.8)';enemy.style.opacity='0.2';confetti();fanfare();victory.classList.add('show');}
+    }
+    function fireOne(){ speak('Fire!');cannon.play();const sx=160,sy=150,ex=window.innerWidth-180;animateBall(sx,sy,ex,1400+Math.random()*200);setTimeout(()=>splash.play(),1100); }
+    function animateBall(sx,sy,ex,d=1500){const b=document.createElement('div');b.className='cannonball';document.body.appendChild(b);
+      b.style.left=sx+'px';b.style.bottom=sy+'px';b.style.opacity=1;const start=performance.now();
+      function f(t){const p=Math.min(1,(t-start)/d),x=sx+(ex-sx)*p,y=sy+Math.sin(p*Math.PI)*40-p*10;b.style.transform=`translate(${x-sx}px,${-y}px)`;if(p<1)requestAnimationFrame(f);else{b.style.opacity=0;b.remove();impact();}}requestAnimationFrame(f);
+    }
+    function volley(c=7,g=160){ if(firing||victory.classList.contains('show'))return;firing=true;speak('Full volley!');let i=0;(function loop(){fireOne();i++;if(i<c&&health>0)setTimeout(loop,g);else setTimeout(()=>firing=false,g+400);})(); }
+    fireBtn.addEventListener('click',()=>{if(firing||victory.classList.contains('show'))return;firing=true;fireOne();setTimeout(()=>firing=false,1600);});
+    volleyBtn.addEventListener('click',()=>volley(9,140));
+    restartBtn.addEventListener('click',()=>{health=100;healthFill.style.width='100%';enemy.style.filter='none';enemy.style.transform='none';enemy.style.opacity='1';victory.classList.remove('show');});
   })();
   </script>
 </body>
