@@ -57,30 +57,41 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.2);
     }
     .healthFill { height: 100%; width: 100%; background: linear-gradient(90deg, #16a34a, #f59e0b, #ef4444); transition: width .25s ease; }
-    .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 6px rgba(251,146,60,.8); opacity: 0; pointer-events: none; }
-    .confetti { position: absolute; width: 10px; height: 16px; opacity: 0.95; transform: rotate(0deg); will-change: transform, top, left; }
+    /* particles */
+    .particle {
+      position: absolute; width: 8px; height: 8px; border-radius: 50%;
+      background: #fb923c; box-shadow: 0 0 6px rgba(251, 146, 60, .8);
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* confetti */
+    .confetti {
+      position: absolute; width: 10px; height: 16px; opacity: 0.95;
+      transform: rotate(0deg); will-change: transform, top, left;
+    }
+    /* screen shake */
     .shake { animation: shake .35s ease; }
     @keyframes shake {
-      0%{ transform: translate(0,0); } 20%{ transform: translate(-6px, 4px); }
-      40%{ transform: translate(6px, -3px); } 60%{ transform: translate(-3px, 3px); }
-      80%{ transform: translate(3px, -2px); } 100%{ transform: translate(0,0); }
+      0%{ transform: translate(0,0); }
+      20%{ transform: translate(-6px, 4px); }
+      40%{ transform: translate(6px, -3px); }
+      60%{ transform: translate(-3px, 3px); }
+      80%{ transform: translate(3px, -2px); }
+      100%{ transform: translate(0,0); }
     }
+    /* Victory overlay */
     .victory {
       position: absolute; inset: 0; display:none; align-items:center; justify-content:center; flex-direction: column;
-      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); text-align:center;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+      text-align:center;
     }
     .victory.show { display:flex; animation: fadeIn .35s ease; }
     @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-    .banner { font-size: 44px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,.5); margin-bottom: 8px; }
-    .subtitle { opacity: .95; margin-bottom: 12px; }
-
-    /* Tiny toast for audio status */
-    .toast {
-      position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
-      background: rgba(0,0,0,.6); padding: 8px 12px; border-radius: 999px; font-size: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.3); opacity: 0; transition: opacity .25s ease;
+    .banner {
+      font-size: 44px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,.5);
+      margin-bottom: 8px;
     }
-    .toast.show { opacity: 1; }
+    .subtitle { opacity: .95; margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -109,6 +120,7 @@
       <div class="health"><div class="healthFill" id="healthFill"></div></div>
       <div class="enemy" id="enemy">
         <div class="name">Ball Pond Scum</div>
+        <!-- explosions container -->
         <svg class="boom" id="boom1" width="90" height="90" viewBox="0 0 100 100" fill="none">
           <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
                    fill="#fb923c" stroke="#7c2d12" stroke-width="3"></polygon>
@@ -135,24 +147,8 @@
     <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
   </div>
 
-  <!-- Background music (MP3 first for Safari/iOS, OGG fallback) -->
-  <audio id="bgm" preload="auto" loop crossorigin="anonymous">
-    <source src="./victory_at_sea.mp3" type="audio/mpeg"> <!-- ← add this file to your repo root -->
-    <source src="https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg" type="audio/ogg">
-  </audio>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
   <script>
-  (function(){
-    function ready(fn){ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true}); else fn(); }
-    function showToast(msg, ms=2000){
-      const t = document.getElementById('toast'); if(!t) return;
-      t.textContent = msg; t.classList.add('show');
-      setTimeout(()=> t.classList.remove('show'), ms);
-    }
-
-    ready(function(){
+    (function(){
       const scene = document.getElementById('scene');
       const fireBtn = document.getElementById('fireBtn');
       const volleyBtn = document.getElementById('volleyBtn');
@@ -162,81 +158,102 @@
       const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
       const victory = document.getElementById('victory');
       const restartBtn = document.getElementById('restartBtn');
-      const bgm = document.getElementById('bgm');
 
-      if (!scene || !fireBtn || !volleyBtn || !musicBtn || !enemy || !healthFill || !victory || !restartBtn || !bgm) {
-        console.error('Missing required elements.'); return;
-      }
-
-      // --- SFX ---
+      // basic SFX
       const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
       const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
       const voice = new SpeechSynthesisUtterance('Captain Seawall unleashes a devastating barrage on Ball Pond Scum!');
       voice.rate = 0.95; voice.pitch = 0.55;
-      function speak(text){ try { if (text) voice.text = text; speechSynthesis.cancel(); speechSynthesis.speak(voice); } catch(e){} }
-      function playSfx(a){ try { a.currentTime = 0; a.play(); } catch(e){} }
 
-      // --- Music wiring (no fragile flags; rely on player state) ---
-      bgm.volume = 0.45;
-
-      function syncMusicUi(){
-        musicBtn.textContent = bgm.paused ? '🎵 Music: Off' : '🎵 Music: On';
-      }
-      bgm.addEventListener('play', syncMusicUi);
-      bgm.addEventListener('pause', syncMusicUi);
-      bgm.addEventListener('loadeddata', ()=> { /* ready to play */ });
-
-      async function playMusic(){
-        try {
-          await bgm.play();
-        } catch(e) {
-          // Autoplay blocked — arm one-time user gesture unlock
-          const unlock = async () => {
-            try { await bgm.play(); showToast('Music started'); }
-            catch { showToast('Tap 🎵 to play music'); }
-            finally {
-              window.removeEventListener('pointerdown', unlock, true);
-              window.removeEventListener('keydown', unlock, true);
-              window.removeEventListener('touchstart', unlock, true);
-            }
-          };
-          window.addEventListener('pointerdown', unlock, true);
-          window.addEventListener('keydown', unlock, true);
-          window.addEventListener('touchstart', unlock, true);
-          showToast('Tap anywhere once to start music');
-        }
-      }
-
-      // MP3 presence check (helps Safari users)
-      // If MP3 fails to load, Safari likely can’t play OGG — tell user to add the MP3.
-      const mp3Src = Array.from(bgm.querySelectorAll('source')).find(s => /audio\/mpeg/i.test(s.type));
-      if (mp3Src && mp3Src.src.endsWith('victory_at_sea.mp3')) {
-        fetch(mp3Src.src, { method: 'HEAD', mode: 'no-cors' })
-          .catch(()=>{}) // ignore CORS errors; just try to play and rely on events
-          .finally(()=> playMusic());
-      } else {
-        playMusic();
-      }
-
-      // Button toggles actual player state (not a custom flag)
-      musicBtn.addEventListener('click', async () => {
-        if (bgm.paused) {
-          try { await bgm.play(); } catch { showToast('Browser blocked autoplay — tap once'); }
-        } else {
-          bgm.pause();
-        }
-      });
-
-      // Resume if user returns to tab and audio is paused after being started
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !bgm.paused && bgm.currentTime > 0) {
-          // no-op; UI stays synced via events
-        }
-      });
-
-      // --- Gameplay state ---
       let firing = false;
       let health = 100;
+      let musicOn = false;
+      let audioCtx = null;
+      let musicNodes = null;
+
+      function speak(text) {
+        try { if (text) voice.text = text; window.speechSynthesis.cancel(); window.speechSynthesis.speak(voice); } catch(e) {}
+      }
+
+      function play(aud) { try { aud.currentTime = 0; aud.play(); } catch(e) {} }
+
+      // Pirate-y drum loop with WebAudio: kick + tom + hat; 80 BPM
+      function startMusic() {
+        if (musicOn) return;
+        musicOn = true;
+        musicBtn.textContent = '🎵 Music: On';
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = audioCtx;
+
+        const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
+
+        function kick(time){
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.setValueAtTime(120, time);
+          osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+          gain.gain.setValueAtTime(1, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+          osc.connect(gain); gain.connect(master);
+          osc.start(time); osc.stop(time + 0.13);
+        }
+
+        function tom(time){
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(200, time);
+          osc.frequency.exponentialRampToValueAtTime(90, time + 0.15);
+          gain.gain.setValueAtTime(0.5, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.16);
+          osc.connect(gain); gain.connect(master);
+          osc.start(time); osc.stop(time + 0.17);
+        }
+
+        function hat(time){
+          const bufferSize = 2 * ctx.sampleRate;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          const noise = ctx.createBufferSource(); noise.buffer = buffer;
+          const bp = ctx.createBiquadFilter(); bp.type = 'highpass'; bp.frequency.value = 8000;
+          const gain = ctx.createGain(); gain.gain.value = 0.05;
+          noise.connect(bp); bp.connect(gain); gain.connect(master);
+          noise.start(time); noise.stop(time + 0.05);
+        }
+
+        const bpm = 80;
+        const beat = 60/bpm;
+        let t = ctx.currentTime + 0.05;
+
+        let running = true;
+        function schedule(){
+          if (!running) return;
+          // Pattern: Kick | Hat | Tom | Hat
+          kick(t); hat(t + 0.05);
+          hat(t + beat*0.5);
+          tom(t + beat*1.0); hat(t + beat*1.05);
+          hat(t + beat*1.5);
+          // Little swing
+          t += beat*2;
+          setTimeout(schedule, beat*1000);
+        }
+        schedule();
+
+        musicNodes = { stop(){ running = false; } };
+      }
+
+      function stopMusic() {
+        musicOn = false;
+        musicBtn.textContent = '🎵 Music: Off';
+        if (musicNodes && musicNodes.stop) musicNodes.stop();
+        musicNodes = null;
+      }
+
+      musicBtn.addEventListener('click', () => {
+        if (!musicOn) startMusic();
+        else stopMusic();
+      });
 
       function makeParticle(x, y) {
         const p = document.createElement('div');
@@ -250,12 +267,14 @@
         const start = performance.now();
         p.style.opacity = 1;
         function frame(t){
-          const k = Math.min(1, (t - start)/life);
+          const dt = t - start;
+          const k = Math.min(1, dt/life);
           const dx = Math.cos(angle) * speed * k;
           const dy = Math.sin(angle) * speed * k + 0.5 * 400 * (k*k);
           p.style.transform = `translate(${dx}px, ${dy}px) scale(${1-k})`;
           p.style.opacity = 1-k;
-          if (k < 1) requestAnimationFrame(frame); else p.remove();
+          if (k < 1) requestAnimationFrame(frame);
+          else p.remove();
         }
         requestAnimationFrame(frame);
       }
@@ -278,15 +297,18 @@
             c.style.top = (k*100) + 'vh';
             c.style.left = `calc(${parseFloat(c.style.left)}vw + ${drift*k}px)`;
             c.style.transform = `rotate(${k*720}deg)`;
-            if (k < 1) requestAnimationFrame(frame); else c.remove();
+            if (k < 1) requestAnimationFrame(frame);
+            else c.remove();
           }
           requestAnimationFrame(frame);
         }
       }
 
       function fanfare(){
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const master = ctx.createGain(); master.gain.value = 0.25; master.connect(ctx.destination);
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = audioCtx;
+        const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
+
         function note(freq, time, len=0.25){
           const o = ctx.createOscillator();
           const g = ctx.createGain();
@@ -297,8 +319,10 @@
           o.connect(g); g.connect(master);
           o.start(time); o.stop(time + len + 0.02);
         }
+
         const now = ctx.currentTime + 0.05;
-        [523,659,784,1046,784,988,1046].forEach((f, i) => note(f, now + i*0.22, 0.2));
+        const seq = [523, 659, 784, 1046, 784, 988, 1046]; // simple triumph
+        seq.forEach((f, i) => note(f, now + i*0.22, 0.2));
       }
 
       function impactEffects() {
@@ -318,12 +342,14 @@
         healthFill.style.width = health + '%';
 
         if (health <= 0) {
+          // Victory sequence
           enemy.style.filter = 'grayscale(1) brightness(0.5)';
           enemy.style.transform = 'scale(0.8)';
           enemy.style.opacity = '0.2';
           confettiBurst();
           fanfare();
           victory.classList.add('show');
+          stopMusic();
         }
       }
 
@@ -341,19 +367,23 @@
           const y = startY + Math.sin(p * Math.PI) * 40 - p * 10;
           ball.style.transform = `translate(${x - startX}px, ${-y}px)`;
           if (p < 1) requestAnimationFrame(frame);
-          else { ball.style.opacity = 0; ball.remove(); impactEffects(); }
+          else {
+            ball.style.opacity = 0;
+            ball.remove();
+            impactEffects();
+          }
         }
         requestAnimationFrame(frame);
       }
 
       function fireOne() {
         speak('Fire!');
-        playSfx(cannon);
+        play(cannon);
         const startX = 160;
         const startY = 150;
         const endX = window.innerWidth - 180;
         animateCannonball(startX, startY, endX, 1400 + Math.random()*200);
-        setTimeout(()=> playSfx(splash), 1100);
+        setTimeout(()=> play(splash), 1100);
       }
 
       function fireVolley(count=7, spacing=160) {
@@ -369,14 +399,14 @@
         })();
       }
 
-      fireBtn.addEventListener('click', () => {
+      document.getElementById('fireBtn').addEventListener('click', () => {
         if (firing || victory.classList.contains('show')) return;
         firing = true;
         fireOne();
         setTimeout(()=> firing=false, 1600);
       });
 
-      volleyBtn.addEventListener('click', () => fireVolley(9, 140));
+      document.getElementById('volleyBtn').addEventListener('click', () => fireVolley(9, 140));
 
       restartBtn.addEventListener('click', () => {
         health = 100;
@@ -386,11 +416,7 @@
         enemy.style.opacity = '1';
         victory.classList.remove('show');
       });
-
-      // Initial UI sync
-      syncMusicUi();
-    });
-  })();
+    })();
   </script>
 </body>
 </html>
