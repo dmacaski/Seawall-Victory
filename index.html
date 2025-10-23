@@ -147,7 +147,7 @@
     <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
   </div>
 
-  <script>
+ <script>
 (function(){
   const scene = document.getElementById('scene');
   const fireBtn = document.getElementById('fireBtn');
@@ -167,48 +167,79 @@
 
   let firing = false;
   let health = 100;
+
+  // ==== MUSIC: Victory at Sea with autoplay-unlock ====
   let musicOn = false;
   let musicTrack = null;
+  let musicArmed = false; // to avoid wiring multiple unlock listeners
 
   function speak(text) {
     try { if (text) voice.text = text; window.speechSynthesis.cancel(); window.speechSynthesis.speak(voice); } catch(e) {}
   }
-
   function play(aud) { try { aud.currentTime = 0; aud.play(); } catch(e) {} }
 
-  // 🎵 Victory at Sea theme music (auto-start)
-  function startMusic() {
-    if (musicOn) return;
-    musicOn = true;
-    musicBtn.textContent = '🎵 Music: On';
+  function makeMusic(){
+    if (musicTrack) return musicTrack;
     musicTrack = new Audio('https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg');
     musicTrack.loop = true;
-    musicTrack.volume = 0.4;
-    musicTrack.play().catch(()=> {
-      // Some browsers block autoplay until user interacts
-      musicBtn.textContent = '🎵 Click to Play Music';
-      musicBtn.addEventListener('click', () => {
-        musicTrack.play();
-        musicBtn.textContent = '🎵 Music: On';
-      }, { once: true });
-    });
+    musicTrack.volume = 0.45;
+    return musicTrack;
   }
 
-  function stopMusic() {
+  async function tryPlayMusic(){
+    const a = makeMusic();
+    try {
+      await a.play();
+      musicBtn.textContent = '🎵 Music: On';
+      return true;
+    } catch (e) {
+      if (!musicArmed) {
+        musicArmed = true;
+        const unlock = async () => {
+          try { await a.play(); musicBtn.textContent = '🎵 Music: On'; }
+          catch { musicBtn.textContent = '🎵 Click to Play Music'; }
+          finally {
+            window.removeEventListener('pointerdown', unlock, true);
+            window.removeEventListener('keydown', unlock, true);
+            window.removeEventListener('touchstart', unlock, true);
+          }
+        };
+        window.addEventListener('pointerdown', unlock, true);
+        window.addEventListener('keydown', unlock, true);
+        window.addEventListener('touchstart', unlock, true);
+        musicBtn.textContent = '🎵 Click to Play Music';
+      }
+      return false;
+    }
+  }
+
+  async function startMusic(){
+    if (musicOn) return;
+    musicOn = true;
+    await tryPlayMusic();
+  }
+
+  function stopMusic(){
     musicOn = false;
+    if (musicTrack) musicTrack.pause();
     musicBtn.textContent = '🎵 Music: Off';
-    if (musicTrack) { musicTrack.pause(); musicTrack.currentTime = 0; }
   }
 
-  musicBtn.addEventListener('click', () => {
-    if (!musicOn) startMusic();
+  musicBtn.addEventListener('click', async () => {
+    if (!musicOn) await startMusic();
     else stopMusic();
   });
 
-  // Auto-start music as soon as possible
-  window.addEventListener('load', () => {
-    startMusic();
+  // Try to start on load; if blocked, first tap/click/keypress will start it.
+  window.addEventListener('load', () => { startMusic(); });
+
+  // If user switches back to the tab and had music on, ensure it resumes.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && musicOn && musicTrack && musicTrack.paused) {
+      tryPlayMusic();
+    }
   });
+  // ==== /MUSIC ====
 
   function makeParticle(x, y) {
     const p = document.createElement('div');
@@ -300,7 +331,7 @@
       confettiBurst();
       fanfare();
       victory.classList.add('show');
-      stopMusic();
+      stopMusic(); // stop background track on victory
     }
   }
 
@@ -345,29 +376,7 @@
     (function loop(){
       fireOne();
       i++;
-      if (i < count && health > 0) setTimeout(loop, spacing);
-      else setTimeout(()=> firing=false, spacing + 400);
-    })();
-  }
+      if (i < count && health > 0) setTimeout(loop, sp
 
-  fireBtn.addEventListener('click', () => {
-    if (firing || victory.classList.contains('show')) return;
-    firing = true;
-    fireOne();
-    setTimeout(()=> firing=false, 1600);
-  });
-
-  volleyBtn.addEventListener('click', () => fireVolley(9, 140));
-
-  restartBtn.addEventListener('click', () => {
-    health = 100;
-    healthFill.style.width = '100%';
-    enemy.style.filter = 'none';
-    enemy.style.transform = 'none';
-    enemy.style.opacity = '1';
-    victory.classList.remove('show');
-  });
-})();
-</script>
 </body>
 </html>
