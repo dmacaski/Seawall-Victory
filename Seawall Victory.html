@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Captain Seawall — Victory Edition</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: linear-gradient(#38bdf8, #0b2b5e);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: white;
+      overflow: hidden;
+    }
+    .scene { position: relative; width: 100%; height: 100%; }
+    .waves {
+      position: absolute; bottom: 0; width: 100%; height: 33%;
+      background: rgba(30, 64, 175, 0.7);
+      animation: bob 4s infinite;
+    }
+    @keyframes bob { 0%{transform:translateY(0)} 50%{transform:translateY(10px)} 100%{transform:translateY(0)} }
+    .title { position: absolute; top: 20px; width: 100%; text-align: center; font-weight: 800; font-size: 28px; text-shadow: 0 2px 6px rgba(0,0,0,.4); }
+    .tag { position: absolute; bottom: 10px; width: 100%; text-align: center; opacity: .9; font-size: 14px; }
+    .shipWrap { position: absolute; left: 20px; bottom: 100px; text-align:center; }
+    .ship { filter: drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
+    .controls { display:flex; gap:8px; justify-content:center; margin-top:8px; flex-wrap: wrap; }
+    .btn { background: #facc15; color: #111; border: 0; padding: 10px 14px; border-radius: 14px; font-weight: 700; cursor: pointer; }
+    .btn:hover { background: #fde047; }
+    .btn.secondary { background: #e5e7eb; }
+    .btn.secondary:hover { background: #f3f4f6; }
+    .cannonball {
+      position: absolute; left: 160px; bottom: 150px;
+      width: 18px; height: 18px; background: #d1d5db; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,.3);
+      opacity: 0; pointer-events: none;
+    }
+    .enemyWrap { position: absolute; right: 30px; bottom: 80px; text-align:center; }
+    .enemy {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: #166534; border: 4px solid #22c55e;
+      display:flex; align-items:center; justify-content:center;
+      animation: pulse 1.4s infinite;
+      mix-blend-mode: overlay;
+      position: relative;
+      transition: filter .4s ease, opacity .4s ease, transform .4s ease;
+    }
+    @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+    .boom {
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%) scale(0);
+      opacity: 0; transition: transform .25s ease, opacity .25s ease;
+      pointer-events: none;
+    }
+    .boom.show { transform: translateX(-50%) scale(1.1); opacity: 1; }
+    .name { font-weight: 800; color: #d9f99d; font-size: 12px; padding: 0 6px; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+    .health {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      width: 160px; height: 10px; background: rgba(255,255,255,.25); border-radius: 999px; overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    }
+    .healthFill { height: 100%; width: 100%; background: linear-gradient(90deg, #16a34a, #f59e0b, #ef4444); transition: width .25s ease; }
+    /* particles */
+    .particle {
+      position: absolute; width: 8px; height: 8px; border-radius: 50%;
+      background: #fb923c; box-shadow: 0 0 6px rgba(251, 146, 60, .8);
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* confetti */
+    .confetti {
+      position: absolute; width: 10px; height: 16px; opacity: 0.95;
+      transform: rotate(0deg); will-change: transform, top, left;
+    }
+    /* screen shake */
+    .shake { animation: shake .35s ease; }
+    @keyframes shake {
+      0%{ transform: translate(0,0); }
+      20%{ transform: translate(-6px, 4px); }
+      40%{ transform: translate(6px, -3px); }
+      60%{ transform: translate(-3px, 3px); }
+      80%{ transform: translate(3px, -2px); }
+      100%{ transform: translate(0,0); }
+    }
+    /* Victory overlay */
+    .victory {
+      position: absolute; inset: 0; display:none; align-items:center; justify-content:center; flex-direction: column;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+      text-align:center;
+    }
+    .victory.show { display:flex; animation: fadeIn .35s ease; }
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    .banner {
+      font-size: 44px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,.5);
+      margin-bottom: 8px;
+    }
+    .subtitle { opacity: .95; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="scene" id="scene">
+    <div class="waves"></div>
+    <div class="title">Captain Seawall vs Ball Pond Scum — Victory Edition</div>
+
+    <div class="shipWrap">
+      <svg class="ship" width="150" height="105" viewBox="0 0 120 84" fill="none">
+        <path d="M10 60 L110 60 L95 80 L25 80 Z" fill="#b45309"></path>
+        <rect x="55" y="10" width="6" height="50" fill="#e5e7eb"></rect>
+        <path d="M61 10 L100 35 L61 35 Z" fill="#fef08a"></path>
+        <circle cx="35" cy="69" r="4" fill="#1f2937"></circle>
+        <circle cx="50" cy="69" r="4" fill="#1f2937"></circle>
+        <circle cx="65" cy="69" r="4" fill="#1f2937"></circle>
+      </svg>
+      <div style="font-weight:800; margin-top:6px;">Captain Seawall</div>
+      <div class="controls">
+        <button class="btn" id="fireBtn">🔊 Fire Barrage!</button>
+        <button class="btn" id="volleyBtn">💥 Full Volley</button>
+        <button class="btn secondary" id="musicBtn">🎵 Music: Off</button>
+      </div>
+    </div>
+
+    <div class="enemyWrap">
+      <div class="health"><div class="healthFill" id="healthFill"></div></div>
+      <div class="enemy" id="enemy">
+        <div class="name">Ball Pond Scum</div>
+        <!-- explosions container -->
+        <svg class="boom" id="boom1" width="90" height="90" viewBox="0 0 100 100" fill="none">
+          <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
+                   fill="#fb923c" stroke="#7c2d12" stroke-width="3"></polygon>
+        </svg>
+        <svg class="boom" id="boom2" width="60" height="60" viewBox="0 0 100 100" fill="none" style="top: 20px; left: 20%;">
+          <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
+                   fill="#f97316" stroke="#7c2d12" stroke-width="3"></polygon>
+        </svg>
+        <svg class="boom" id="boom3" width="70" height="70" viewBox="0 0 100 100" fill="none" style="top: 10px; left: 70%;">
+          <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
+                   fill="#fdba74" stroke="#7c2d12" stroke-width="3"></polygon>
+        </svg>
+      </div>
+    </div>
+
+    <div class="victory" id="victory">
+      <div class="banner">🏴‍☠️ Victory!</div>
+      <div class="subtitle">Captain Seawall defeats Ball Pond Scum</div>
+      <div class="controls">
+        <button class="btn" id="restartBtn">↻ Restart Battle</button>
+      </div>
+    </div>
+
+    <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
+  </div>
+
+  <script>
+    (function(){
+      const scene = document.getElementById('scene');
+      const fireBtn = document.getElementById('fireBtn');
+      const volleyBtn = document.getElementById('volleyBtn');
+      const musicBtn = document.getElementById('musicBtn');
+      const enemy = document.getElementById('enemy');
+      const healthFill = document.getElementById('healthFill');
+      const booms = [document.getElementById('boom1'), document.getElementById('boom2'), document.getElementById('boom3')];
+      const victory = document.getElementById('victory');
+      const restartBtn = document.getElementById('restartBtn');
+
+      // basic SFX
+      const cannon = new Audio('https://actions.google.com/sounds/v1/weapons/cannon.ogg');
+      const splash = new Audio('https://actions.google.com/sounds/v1/water/splash.ogg');
+      const voice = new SpeechSynthesisUtterance('Captain Seawall unleashes a devastating barrage on Ball Pond Scum!');
+      voice.rate = 0.95; voice.pitch = 0.55;
+
+      let firing = false;
+      let health = 100;
+      let musicOn = false;
+      let audioCtx = null;
+      let musicNodes = null;
+
+      function speak(text) {
+        try { if (text) voice.text = text; window.speechSynthesis.cancel(); window.speechSynthesis.speak(voice); } catch(e) {}
+      }
+
+      function play(aud) { try { aud.currentTime = 0; aud.play(); } catch(e) {} }
+
+      // Pirate-y drum loop with WebAudio: kick + tom + hat; 80 BPM
+      function startMusic() {
+        if (musicOn) return;
+        musicOn = true;
+        musicBtn.textContent = '🎵 Music: On';
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = audioCtx;
+
+        const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
+
+        function kick(time){
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.setValueAtTime(120, time);
+          osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+          gain.gain.setValueAtTime(1, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+          osc.connect(gain); gain.connect(master);
+          osc.start(time); osc.stop(time + 0.13);
+        }
+
+        function tom(time){
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(200, time);
+          osc.frequency.exponentialRampToValueAtTime(90, time + 0.15);
+          gain.gain.setValueAtTime(0.5, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.16);
+          osc.connect(gain); gain.connect(master);
+          osc.start(time); osc.stop(time + 0.17);
+        }
+
+        function hat(time){
+          const bufferSize = 2 * ctx.sampleRate;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          const noise = ctx.createBufferSource(); noise.buffer = buffer;
+          const bp = ctx.createBiquadFilter(); bp.type = 'highpass'; bp.frequency.value = 8000;
+          const gain = ctx.createGain(); gain.gain.value = 0.05;
+          noise.connect(bp); bp.connect(gain); gain.connect(master);
+          noise.start(time); noise.stop(time + 0.05);
+        }
+
+        const bpm = 80;
+        const beat = 60/bpm;
+        let t = ctx.currentTime + 0.05;
+
+        let running = true;
+        function schedule(){
+          if (!running) return;
+          // Pattern: Kick | Hat | Tom | Hat
+          kick(t); hat(t + 0.05);
+          hat(t + beat*0.5);
+          tom(t + beat*1.0); hat(t + beat*1.05);
+          hat(t + beat*1.5);
+          // Little swing
+          t += beat*2;
+          setTimeout(schedule, beat*1000);
+        }
+        schedule();
+
+        musicNodes = { stop(){ running = false; } };
+      }
+
+      function stopMusic() {
+        musicOn = false;
+        musicBtn.textContent = '🎵 Music: Off';
+        if (musicNodes && musicNodes.stop) musicNodes.stop();
+        musicNodes = null;
+      }
+
+      musicBtn.addEventListener('click', () => {
+        if (!musicOn) startMusic();
+        else stopMusic();
+      });
+
+      function makeParticle(x, y) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        document.body.appendChild(p);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 140;
+        const life = 500 + Math.random() * 400;
+        const start = performance.now();
+        p.style.opacity = 1;
+        function frame(t){
+          const dt = t - start;
+          const k = Math.min(1, dt/life);
+          const dx = Math.cos(angle) * speed * k;
+          const dy = Math.sin(angle) * speed * k + 0.5 * 400 * (k*k);
+          p.style.transform = `translate(${dx}px, ${dy}px) scale(${1-k})`;
+          p.style.opacity = 1-k;
+          if (k < 1) requestAnimationFrame(frame);
+          else p.remove();
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function confettiBurst() {
+        const colors = ['#fde047','#60a5fa','#fb7185','#34d399','#fbbf24','#c084fc'];
+        for (let i=0;i<120;i++) {
+          const c = document.createElement('div');
+          c.className = 'confetti';
+          c.style.left = (Math.random()*100) + 'vw';
+          c.style.top = '-20px';
+          c.style.background = colors[Math.floor(Math.random()*colors.length)];
+          c.style.transform = `rotate(${Math.random()*360}deg)`;
+          document.body.appendChild(c);
+          const duration = 2000 + Math.random()*2000;
+          const start = performance.now();
+          const drift = (Math.random()*2-1) * 120;
+          function frame(t){
+            const k = Math.min(1, (t-start)/duration);
+            c.style.top = (k*100) + 'vh';
+            c.style.left = `calc(${parseFloat(c.style.left)}vw + ${drift*k}px)`;
+            c.style.transform = `rotate(${k*720}deg)`;
+            if (k < 1) requestAnimationFrame(frame);
+            else c.remove();
+          }
+          requestAnimationFrame(frame);
+        }
+      }
+
+      function fanfare(){
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = audioCtx;
+        const master = ctx.createGain(); master.gain.value = 0.2; master.connect(ctx.destination);
+
+        function note(freq, time, len=0.25){
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = freq;
+          g.gain.setValueAtTime(0, time);
+          g.gain.linearRampToValueAtTime(0.8, time + 0.01);
+          g.gain.linearRampToValueAtTime(0, time + len);
+          o.connect(g); g.connect(master);
+          o.start(time); o.stop(time + len + 0.02);
+        }
+
+        const now = ctx.currentTime + 0.05;
+        const seq = [523, 659, 784, 1046, 784, 988, 1046]; // simple triumph
+        seq.forEach((f, i) => note(f, now + i*0.22, 0.2));
+      }
+
+      function impactEffects() {
+        scene.classList.add('shake');
+        setTimeout(()=> scene.classList.remove('shake'), 350);
+
+        booms.forEach((b, i) => {
+          setTimeout(()=> { b.classList.add('show'); setTimeout(()=> b.classList.remove('show'), 450); }, i*100);
+        });
+
+        const rect = enemy.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top + rect.height/2;
+        for (let i=0;i<24;i++) makeParticle(cx, cy);
+
+        health = Math.max(0, health - (8 + Math.random()*10));
+        healthFill.style.width = health + '%';
+
+        if (health <= 0) {
+          // Victory sequence
+          enemy.style.filter = 'grayscale(1) brightness(0.5)';
+          enemy.style.transform = 'scale(0.8)';
+          enemy.style.opacity = '0.2';
+          confettiBurst();
+          fanfare();
+          victory.classList.add('show');
+          stopMusic();
+        }
+      }
+
+      function animateCannonball(startX, startY, endX, duration=1500) {
+        const ball = document.createElement('div');
+        ball.className = 'cannonball';
+        document.body.appendChild(ball);
+        ball.style.left = startX + 'px';
+        ball.style.bottom = startY + 'px';
+        ball.style.opacity = 1;
+        const start = performance.now();
+        function frame(t){
+          const p = Math.min(1, (t - start)/duration);
+          const x = startX + (endX - startX) * p;
+          const y = startY + Math.sin(p * Math.PI) * 40 - p * 10;
+          ball.style.transform = `translate(${x - startX}px, ${-y}px)`;
+          if (p < 1) requestAnimationFrame(frame);
+          else {
+            ball.style.opacity = 0;
+            ball.remove();
+            impactEffects();
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function fireOne() {
+        speak('Fire!');
+        play(cannon);
+        const startX = 160;
+        const startY = 150;
+        const endX = window.innerWidth - 180;
+        animateCannonball(startX, startY, endX, 1400 + Math.random()*200);
+        setTimeout(()=> play(splash), 1100);
+      }
+
+      function fireVolley(count=7, spacing=160) {
+        if (firing || victory.classList.contains('show')) return;
+        firing = true;
+        speak('Full volley!');
+        let i = 0;
+        (function loop(){
+          fireOne();
+          i++;
+          if (i < count && health > 0) setTimeout(loop, spacing);
+          else setTimeout(()=> firing=false, spacing + 400);
+        })();
+      }
+
+      document.getElementById('fireBtn').addEventListener('click', () => {
+        if (firing || victory.classList.contains('show')) return;
+        firing = true;
+        fireOne();
+        setTimeout(()=> firing=false, 1600);
+      });
+
+      document.getElementById('volleyBtn').addEventListener('click', () => fireVolley(9, 140));
+
+      restartBtn.addEventListener('click', () => {
+        health = 100;
+        healthFill.style.width = '100%';
+        enemy.style.filter = 'none';
+        enemy.style.transform = 'none';
+        enemy.style.opacity = '1';
+        victory.classList.remove('show');
+      });
+    })();
+  </script>
+</body>
+</html>
