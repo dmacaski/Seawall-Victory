@@ -57,41 +57,30 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.2);
     }
     .healthFill { height: 100%; width: 100%; background: linear-gradient(90deg, #16a34a, #f59e0b, #ef4444); transition: width .25s ease; }
-    /* particles */
-    .particle {
-      position: absolute; width: 8px; height: 8px; border-radius: 50%;
-      background: #fb923c; box-shadow: 0 0 6px rgba(251, 146, 60, .8);
-      opacity: 0;
-      pointer-events: none;
-    }
-    /* confetti */
-    .confetti {
-      position: absolute; width: 10px; height: 16px; opacity: 0.95;
-      transform: rotate(0deg); will-change: transform, top, left;
-    }
-    /* screen shake */
+    .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 6px rgba(251,146,60,.8); opacity: 0; pointer-events: none; }
+    .confetti { position: absolute; width: 10px; height: 16px; opacity: 0.95; transform: rotate(0deg); will-change: transform, top, left; }
     .shake { animation: shake .35s ease; }
     @keyframes shake {
-      0%{ transform: translate(0,0); }
-      20%{ transform: translate(-6px, 4px); }
-      40%{ transform: translate(6px, -3px); }
-      60%{ transform: translate(-3px, 3px); }
-      80%{ transform: translate(3px, -2px); }
-      100%{ transform: translate(0,0); }
+      0%{ transform: translate(0,0); } 20%{ transform: translate(-6px, 4px); }
+      40%{ transform: translate(6px, -3px); } 60%{ transform: translate(-3px, 3px); }
+      80%{ transform: translate(3px, -2px); } 100%{ transform: translate(0,0); }
     }
-    /* Victory overlay */
     .victory {
       position: absolute; inset: 0; display:none; align-items:center; justify-content:center; flex-direction: column;
-      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
-      text-align:center;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); text-align:center;
     }
     .victory.show { display:flex; animation: fadeIn .35s ease; }
     @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-    .banner {
-      font-size: 44px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,.5);
-      margin-bottom: 8px;
-    }
+    .banner { font-size: 44px; font-weight: 900; text-shadow: 0 4px 12px rgba(0,0,0,.5); margin-bottom: 8px; }
     .subtitle { opacity: .95; margin-bottom: 12px; }
+
+    /* Tiny toast for audio status */
+    .toast {
+      position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+      background: rgba(0,0,0,.6); padding: 8px 12px; border-radius: 999px; font-size: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3); opacity: 0; transition: opacity .25s ease;
+    }
+    .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -120,7 +109,6 @@
       <div class="health"><div class="healthFill" id="healthFill"></div></div>
       <div class="enemy" id="enemy">
         <div class="name">Ball Pond Scum</div>
-        <!-- explosions container -->
         <svg class="boom" id="boom1" width="90" height="90" viewBox="0 0 100 100" fill="none">
           <polygon points="50,5 60,30 95,30 65,50 80,85 50,65 20,85 35,50 5,30 40,30"
                    fill="#fb923c" stroke="#7c2d12" stroke-width="3"></polygon>
@@ -147,20 +135,21 @@
     <div class="tag">Now with music, fanfare, confetti, and a proper victory scene. Fire at will!</div>
   </div>
 
-  <!-- Background music: Victory at Sea -->
+  <!-- Background music (MP3 first for Safari/iOS, OGG fallback) -->
   <audio id="bgm" preload="auto" loop crossorigin="anonymous">
+    <source src="./victory_at_sea.mp3" type="audio/mpeg"> <!-- ← add this file to your repo root -->
     <source src="https://upload.wikimedia.org/wikipedia/commons/2/26/Victory_at_Sea_Theme.ogg" type="audio/ogg">
-    <!-- Optional local fallback (add an MP3 to your repo root and uncomment below)
-    <source src="./victory_at_sea.mp3" type="audio/mpeg">
-    -->
   </audio>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
   (function(){
-    // Run after DOM is ready
-    function ready(fn){
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, { once:true });
-      else fn();
+    function ready(fn){ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, {once:true}); else fn(); }
+    function showToast(msg, ms=2000){
+      const t = document.getElementById('toast'); if(!t) return;
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(()=> t.classList.remove('show'), ms);
     }
 
     ready(function(){
@@ -176,8 +165,7 @@
       const bgm = document.getElementById('bgm');
 
       if (!scene || !fireBtn || !volleyBtn || !musicBtn || !enemy || !healthFill || !victory || !restartBtn || !bgm) {
-        console.error('Missing required elements. Check IDs in HTML.');
-        return;
+        console.error('Missing required elements.'); return;
       }
 
       // --- SFX ---
@@ -188,62 +176,62 @@
       function speak(text){ try { if (text) voice.text = text; speechSynthesis.cancel(); speechSynthesis.speak(voice); } catch(e){} }
       function playSfx(a){ try { a.currentTime = 0; a.play(); } catch(e){} }
 
-      // --- Music: robust autoplay handling ---
-      let musicOn = false;     // true only when actually playing
-      let unlockArmed = false;
+      // --- Music wiring (no fragile flags; rely on player state) ---
       bgm.volume = 0.45;
 
-      async function tryPlay(){
+      function syncMusicUi(){
+        musicBtn.textContent = bgm.paused ? '🎵 Music: Off' : '🎵 Music: On';
+      }
+      bgm.addEventListener('play', syncMusicUi);
+      bgm.addEventListener('pause', syncMusicUi);
+      bgm.addEventListener('loadeddata', ()=> { /* ready to play */ });
+
+      async function playMusic(){
         try {
           await bgm.play();
-          musicBtn.textContent = '🎵 Music: On';
-          musicOn = true;                 // set only after success
-          return true;
-        } catch (e) {
-          // Autoplay blocked — arm a one-time user-gesture unlock
-          if (!unlockArmed) {
-            unlockArmed = true;
-            const unlock = async () => {
-              try { await bgm.play(); musicBtn.textContent = '🎵 Music: On'; musicOn = true; }
-              finally {
-                window.removeEventListener('pointerdown', unlock, true);
-                window.removeEventListener('keydown',  unlock, true);
-                window.removeEventListener('touchstart', unlock, true);
-              }
-            };
-            window.addEventListener('pointerdown', unlock, true);
-            window.addEventListener('keydown',  unlock, true);
-            window.addEventListener('touchstart', unlock, true);
-            musicBtn.textContent = '🎵 Click to Play Music';
-          }
-          musicOn = false;
-          return false;
+        } catch(e) {
+          // Autoplay blocked — arm one-time user gesture unlock
+          const unlock = async () => {
+            try { await bgm.play(); showToast('Music started'); }
+            catch { showToast('Tap 🎵 to play music'); }
+            finally {
+              window.removeEventListener('pointerdown', unlock, true);
+              window.removeEventListener('keydown', unlock, true);
+              window.removeEventListener('touchstart', unlock, true);
+            }
+          };
+          window.addEventListener('pointerdown', unlock, true);
+          window.addEventListener('keydown', unlock, true);
+          window.addEventListener('touchstart', unlock, true);
+          showToast('Tap anywhere once to start music');
         }
       }
 
-      async function startMusic(){
-        if (!bgm.paused) { musicOn = true; musicBtn.textContent = '🎵 Music: On'; return; }
-        await tryPlay();
+      // MP3 presence check (helps Safari users)
+      // If MP3 fails to load, Safari likely can’t play OGG — tell user to add the MP3.
+      const mp3Src = Array.from(bgm.querySelectorAll('source')).find(s => /audio\/mpeg/i.test(s.type));
+      if (mp3Src && mp3Src.src.endsWith('victory_at_sea.mp3')) {
+        fetch(mp3Src.src, { method: 'HEAD', mode: 'no-cors' })
+          .catch(()=>{}) // ignore CORS errors; just try to play and rely on events
+          .finally(()=> playMusic());
+      } else {
+        playMusic();
       }
 
-      function stopMusic(){
-        try { bgm.pause(); } catch(e){}
-        musicOn = false;
-        musicBtn.textContent = '🎵 Music: Off';
-      }
-
-      // Try to start immediately; if blocked, first user gesture starts it
-      startMusic();
-
-      // Toggle button always checks the real player state
+      // Button toggles actual player state (not a custom flag)
       musicBtn.addEventListener('click', async () => {
-        if (bgm.paused) await startMusic();
-        else stopMusic();
+        if (bgm.paused) {
+          try { await bgm.play(); } catch { showToast('Browser blocked autoplay — tap once'); }
+        } else {
+          bgm.pause();
+        }
       });
 
-      // Resume after tab returns if user wanted music
+      // Resume if user returns to tab and audio is paused after being started
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && musicOn && bgm.paused) tryPlay();
+        if (!document.hidden && !bgm.paused && bgm.currentTime > 0) {
+          // no-op; UI stays synced via events
+        }
       });
 
       // --- Gameplay state ---
@@ -336,7 +324,6 @@
           confettiBurst();
           fanfare();
           victory.classList.add('show');
-          // Keep background music playing on victory. (Change to stopMusic() if desired.)
         }
       }
 
@@ -399,6 +386,9 @@
         enemy.style.opacity = '1';
         victory.classList.remove('show');
       });
+
+      // Initial UI sync
+      syncMusicUi();
     });
   })();
   </script>
